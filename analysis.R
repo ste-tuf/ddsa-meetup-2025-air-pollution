@@ -1,9 +1,15 @@
-#' # Dev labs monitors measure summary
+#' --- 
+#' title: DDSA Air pollution walk
+#' author: "Stephane Tuffier"
+#' date: 2025-03-28
+#' ---
+#'
+#' # DDSA Air pollution walk
 #' 
+#' Analysis of the Devlabs air pollution monitors
 library(tidyverse)
 
-data <- read_delim("data/walk.csv", delim = ";")
-
+data <- read_delim("data-walk.csv", delim = ";")
 
 # Clean
 data <- data |> 
@@ -21,7 +27,7 @@ data_l <- data |>
   ) |> 
   filter(!is.na(Measurement))
 
-#' # Stats
+#' ## Stats
 tab_stat <- data_l |> 
   group_by(Measurement) |>
   summarise(
@@ -37,20 +43,7 @@ tab_stat <- data_l |>
 gt::gt(tab_stat) |> 
   gt::fmt_number(decimals = 1, drop_trailing_zeros = T)
 
-tab_stat <- tab_stat |> 
-  mutate(Measurement = factor(Measurement,
-                              levels = c( "PM2.5", "NO2", "CO2",  "RH", "T", "Light, data, ALL", 
-                                         "Light_Blue", "Light_Green", "Light_Red", "Light_White",  "Color, Temp."))
-         )
-
-# 
-# data |> 
-#   select(-Timestamp) |> 
-#   gtsummary::tbl_summary(, by = `Entity Name`)
-# 
-#   
-
-#' # Plot
+#' ## Plots
 make_plot <- function(Measurement, data, ...){
   ggplot(data, aes(x = Timestamp, y = Value, colour = Value, group = `Entity Name`)) +
     geom_line(linewidth = 1.5) +
@@ -60,25 +53,14 @@ make_plot <- function(Measurement, data, ...){
 
 }
 
-
 data_nested <- data_l |> 
   select(-contains("Accele")) |> 
   group_by(Measurement) |> 
   nest(data = c(`Entity Name`, Timestamp, Value)) |> 
   arrange(Measurement)
 
-
 data_nested$plot <- pmap(data_nested, make_plot)
   
-# # data_nested |> 
-#   # nest(plot, by= `Entity Name`) |> 
-#   pmap(data_nested, 
-#        function(`Entity Name`, plot, ...){
-#          cat(paste("#", `Entity Name`))
-#          plot
-#        }
-#   )
 data_nested$plot
-
 
 # rmarkdown::render("analysis.R")
